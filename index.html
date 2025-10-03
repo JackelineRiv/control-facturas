@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hermes Web - Control de Facturas</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --primary-color: #FF6B35;  /* Naranja principal */
+            --secondary-color: #FF6B35;  /* Ahora el sidebar es naranja */
+            --success-color: #2ecc71;
+            --warning-color: #FF6B35;  /* Naranja para pendientes */
+            --danger-color: #e74c3c;
+            --light-color: #f8f9fa;
+            --dark-color: #343a40;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f7fa;
+            color: #333;
+        }
+        
+        .sidebar {
+            background: linear-gradient(180deg, var(--secondary-color) 0%, #e55a2b 100%);
+            color: white;
+            min-height: 100vh;
+            padding: 0;
+        }
+        
+        .sidebar .nav-link {
+            color: rgba(255, 255, 255, 0.9);
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin: 5px 10px;
+            transition: all 0.3s;
+        }
+        
+        .sidebar .nav-link:hover, .sidebar .nav-link.active {
+            background-color: rgba(255, 255, 255, 0.2);
+            color: white;
+            transform: translateX(5px);
+        }
+        
+        .sidebar .nav-link i {
+            margin-right: 10px;
+            font-size: 1.1rem;
+        }
+        
+        .logo-container {
+            padding: 20px 15px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            margin-bottom: 20px;
+        }
+        
+        .logo {
+            max-width: 120px;
+            height: auto;
+            margin-bottom: 10px;
+        }
+        
+        .company-name {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: white;
+        }
+        
+        /* El resto del CSS se mantiene igual */
+        .main-content {
+            padding: 20px;
+        }
+        
+        .header {
+            background-color: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        .card {
+            border: none;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+        }
+        
+        .card-header {
+            background-color: white;
+            border-bottom: 1px solid #eee;
+            font-weight: 600;
+        }
+        
+        .invoice-item {
+            border-left: 4px solid var(--primary-color);
+            padding: 15px;
+            margin-bottom: 10px;
+            background-color: white;
+            border-radius: 4px;
+            transition: all 0.3s;
+        }
+        
+        .invoice-item:hover {
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .invoice-item.pending {
+            border-left-color: var(--warning-color);
+        }
+        
+        .invoice-item.completed {
+            border-left-color: var(--success-color);
+        }
+        
+        .status-badge {
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+        
+        .status-pending {
+            background-color: rgba(255, 107, 53, 0.1);
+            color: var(--warning-color);
+        }
+        
+        .status-completed {
+            background-color: rgba(46, 204, 113, 0.1);
+            color: var(--success-color);
+        }
+        
+        .calendar-day {
+            height: 100px;
+            border: 1px solid #eee;
+            padding: 5px;
+            overflow-y: auto;
+        }
+        
+        .calendar-day.today {
+            background-color: rgba(255, 107, 53, 0.1);
+        }
+        
+        .calendar-day.has-invoice {
+            background-color: rgba(255, 107, 53, 0.05);
+        }
+        
+        .calendar-invoice {
+            font-size: 0.7rem;
+            padding: 2px 4px;
+            margin-bottom: 2px;
+            background-color: rgba(255, 107, 53, 0.1);
+            border-radius: 3px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .progress-bar-custom {
+            height: 8px;
+            border-radius: 4px;
+        }
+        
+        .filter-section {
+            background-color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .stats-card {
+            text-align: center;
+            padding: 15px;
+        }
+        
+        .stats-number {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+        
+        .stats-label {
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+        
+        .client-progress {
+            margin-bottom: 20px;
+        }
+        
+        .month-selector {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        
+        .month-title {
+            font-weight: 600;
+            font-size: 1.2rem;
+        }
+        
+        .filter-tabs {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .filter-tab {
+            padding: 5px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .filter-tab.active {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        .filter-tab:hover:not(.active) {
+            background-color: rgba(255, 107, 53, 0.1);
+        }
+        
+        .btn-primary {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+        
+        .btn-primary:hover {
+            background-color: #e55a2b;
+            border-color: #e55a2b;
+        }
+        
+        .progress-bar {
+            background-color: var(--primary-color);
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar - Ahora en naranja -->
+            <div class="col-md-2 sidebar">
+                <div class="d-flex flex-column p-3">
+                    <!-- Espacio para el logo -->
+                    <div class="logo-container">
+                        <img src="logo-HERMES.png" alt="Hermes Web" class="logo">
+
+                        <div class="company-name">HERMES WEB</div>
+                        <small class="text-white-50">Control de Facturas</small>
+                    </div>
+                    
+                    <ul class="nav nav-pills flex-column mb-auto">
+                        <li class="nav-item">
+                            <a href="#" class="nav-link active" id="bills-tab">
+                                <i class="bi bi-receipt"></i> Facturas
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" id="calendar-tab">
+                                <i class="bi bi-calendar-event"></i> Calendario
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" id="reports-tab">
+                                <i class="bi bi-bar-chart"></i> Reportes
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- Main Content -->
+            <div class="col-md-10 main-content">
+                <!-- El contenido principal se mantiene igual -->
+                <!-- Facturas Section -->
+                <div id="bills-section" class="content-section">
+                    <div class="header">
+                        <h2>Gestión de Facturas</h2>
+                        <div class="month-selector">
+                            <button class="btn btn-outline-secondary" id="prev-month"><i class="bi bi-chevron-left"></i></button>
+                            <span class="month-title" id="current-month">Octubre 2025</span>
+                            <button class="btn btn-outline-secondary" id="next-month"><i class="bi bi-chevron-right"></i></button>
+                        </div>
+                    </div>
+                    
+                    <div class="filter-section">
+                        <div class="filter-tabs">
+                            <div class="filter-tab active" data-filter="all">Todos</div>
+                            <div class="filter-tab" data-filter="completed">Completadas</div>
+                            <div class="filter-tab" data-filter="pending">Pendientes</div>
+                            <div class="ms-auto"><strong id="total-amount">Q.0.00 / Q.9,850.00</strong></div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-3 mb-3">
+                                <input type="text" class="form-control" id="search-input" placeholder="Buscar cliente o servicio">
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <select class="form-select" id="client-filter">
+                                    <option value="all">Todos los clientes</option>
+                                    <option value="Joymas">Joymas</option>
+                                    <option value="Agua Aquino">Agua Aquino</option>
+                                    <option value="Prossa">Prossa</option>
+                                    <option value="Proesa">Proesa</option>
+                                    <option value="Marfil">Marfil</option>
+                                    <option value="Gioseppo">Gioseppo</option>
+                                    <option value="El Jardín de las Orquídeas">El Jardín de las Orquídeas</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <select class="form-select" id="service-filter">
+                                    <option value="all">Todos los servicios</option>
+                                    <option value="Google Ads">Google Ads</option>
+                                    <option value="Community Manager">Community Manager</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <select class="form-select" id="status-filter">
+                                    <option value="all">Todos los estados</option>
+                                    <option value="pending">Pendiente</option>
+                                    <option value="completed">Completada</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="invoices-list">
+                        <!-- Las facturas se cargarán aquí dinámicamente -->
+                    </div>
+                </div>
+                
+                <!-- Calendario Section -->
+                <div id="calendar-section" class="content-section d-none">
+                    <div class="header">
+                        <h2>Calendario de Facturas</h2>
+                        <div class="month-selector">
+                            <button class="btn btn-outline-secondary" id="prev-month-calendar"><i class="bi bi-chevron-left"></i></button>
+                            <span class="month-title" id="current-month-calendar">Octubre 2025</span>
+                            <button class="btn btn-outline-secondary" id="next-month-calendar"><i class="bi bi-chevron-right"></i></button>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-body">
+                            <div id="calendar" class="table-responsive">
+                                <!-- El calendario se generará aquí dinámicamente -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Reportes Section -->
+                <div id="reports-section" class="content-section d-none">
+                    <div class="header">
+                        <h2>Reportes</h2>
+                        <p class="mb-0">Análisis mensual de facturas</p>
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    Seleccionar Período
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <select class="form-select mb-3" id="report-month">
+                                                <option value="1">Enero</option>
+                                                <option value="2">Febrero</option>
+                                                <option value="3">Marzo</option>
+                                                <option value="4">Abril</option>
+                                                <option value="5">Mayo</option>
+                                                <option value="6">Junio</option>
+                                                <option value="7">Julio</option>
+                                                <option value="8">Agosto</option>
+                                                <option value="9">Septiembre</option>
+                                                <option value="10" selected>Octubre</option>
+                                                <option value="11">Noviembre</option>
+                                                <option value="12">Diciembre</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <select class="form-select mb-3" id="report-year">
+                                                <option>2024</option>
+                                                <option selected>2025</option>
+                                                <option>2026</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <button class="btn btn-primary" id="generate-report">Generar Reporte</button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="row">
+                                <div class="col-6">
+                                    <div class="card stats-card">
+                                        <div class="stats-number text-primary" id="total-invoices">8</div>
+                                        <div class="stats-label">Total Facturas</div>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="card stats-card">
+                                        <div class="stats-number text-success" id="completed-invoices">6</div>
+                                        <div class="stats-label">Completadas</div>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="card stats-card">
+                                        <div class="stats-number text-warning" id="pending-invoices">2</div>
+                                        <div class="stats-label">Pendientes</div>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="card stats-card">
+                                        <div class="stats-number text-info" id="completion-rate">75%</div>
+                                        <div class="stats-label">% Completado</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            Progreso de Completado
+                        </div>
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Facturas completadas</span>
+                                <span id="completed-text">6 de 8</span>
+                            </div>
+                            <div class="progress progress-bar-custom">
+                                <div class="progress-bar bg-success" role="progressbar" style="width: 75%" aria-valuenow="75" aria-valuemin="0" aria-valuemax="100"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-header d-flex align-items-center">
+                            <i class="bi bi-pencil me-2"></i> Reporte por Cliente
+                        </div>
+                        <div class="card-body">
+                            <div id="client-reports">
+                                <!-- Los reportes por cliente se generarán aquí dinámicamente -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // El código JavaScript se mantiene igual que antes
+        // Datos de las facturas
+        const clients = [
+            {
+                name: "Joymas",
+                services: [
+                    { name: "Google Ads", dueDay: 16, amount: 1500 },
+                    { name: "Community Manager", dueDay: 1, amount: 1500 }
+                ]
+            },
+            {
+                name: "Agua Aquino",
+                services: [
+                    { name: "Google Ads", dueDay: 3, amount: 1150 }
+                ]
+            },
+            {
+                name: "Prossa",
+                services: [
+                    { name: "Google Ads", dueDay: 14, amount: 1000 }
+                ]
+            },
+            {
+                name: "Proesa",
+                services: [
+                    { name: "Google Ads", dueDay: 25, amount: 1200 }
+                ]
+            },
+            {
+                name: "Marfil",
+                services: [
+                    { name: "Google Ads", dueDay: 28, amount: 1000 }
+                ]
+            },
+            {
+                name: "Gioseppo",
+                services: [
+                    { name: "Google Ads", dueDay: 21, amount: 1000 }
+                ]
+            },
+            {
+                name: "El Jardín de las Orquídeas",
+                services: [
+                    { name: "Google Ads", dueDay: 19, amount: 1500 }
+                ]
+            }
+        ];
+
+        // Estado global de la aplicación
+        let appState = {
+            currentYear: 2025,
+            currentMonth: 10, // Octubre
+            invoices: [],
+            filters: {
+                search: '',
+                client: 'all',
+                service: 'all',
+                status: 'all',
+                tab: 'all'
+            }
+        };
+
+        // Generar facturas para el mes actual
+        function generateInvoicesForMonth(year, month) {
+            const invoices = [];
+            
+            clients.forEach(client => {
+                client.services.forEach(service => {
+                    const dueDate = new Date(year, month - 1, service.dueDay);
+                    
+                    // Solo incluir facturas para el mes solicitado
+                    if (dueDate.getMonth() === month - 1) {
+                        invoices.push({
+                            id: `${client.name}-${service.name}-${dueDate.getDate()}`,
+                            client: client.name,
+                            service: service.name,
+                            amount: service.amount,
+                            dueDate: dueDate,
+                            status: Math.random() > 0.3 ? 'pending' : 'completed' // Simulación de estado
+                        });
+                    }
+                });
+            });
+            
+            return invoices.sort((a, b) => a.dueDate - b.dueDate);
+        }
+
+        // Cambiar entre secciones
+        document.getElementById('bills-tab').addEventListener('click', function(e) {
+            e.preventDefault();
+            showSection('bills-section');
+            setActiveTab('bills-tab');
+            updateInvoicesDisplay();
+        });
+
+        document.getElementById('calendar-tab').addEventListener('click', function(e) {
+            e.preventDefault();
+            showSection('calendar-section');
+            setActiveTab('calendar-tab');
+            generateCalendar(appState.currentYear, appState.currentMonth);
+        });
+
+        document.getElementById('reports-tab').addEventListener('click', function(e) {
+            e.preventDefault();
+            showSection('reports-section');
+            setActiveTab('reports-tab');
+            generateClientReports(appState.currentYear, appState.currentMonth);
+        });
+
+        function showSection(sectionId) {
+            document.querySelectorAll('.content-section').forEach(section => {
+                section.classList.add('d-none');
+            });
+            document.getElementById(sectionId).classList.remove('d-none');
+        }
+
+        function setActiveTab(tabId) {
+            document.querySelectorAll('.nav-link').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.getElementById(tabId).classList.add('active');
+        }
+
+        // Navegación de meses
+        document.getElementById('prev-month').addEventListener('click', function() {
+            changeMonth(-1);
+        });
+
+        document.getElementById('next-month').addEventListener('click', function() {
+            changeMonth(1);
+        });
+
+        document.getElementById('prev-month-calendar').addEventListener('click', function() {
+            changeMonth(-1);
+            showSection('calendar-section');
+            setActiveTab('calendar-tab');
+        });
+
+        document.getElementById('next-month-calendar').addEventListener('click', function() {
+            changeMonth(1);
+            showSection('calendar-section');
+            setActiveTab('calendar-tab');
+        });
+
+        function changeMonth(offset) {
+            let newMonth = appState.currentMonth + offset;
+            let newYear = appState.currentYear;
+            
+            if (newMonth > 12) {
+                newMonth = 1;
+                newYear++;
+            } else if (newMonth < 1) {
+                newMonth = 12;
+                newYear--;
+            }
+            
+            appState.currentMonth = newMonth;
+            appState.currentYear = newYear;
+            
+            updateMonthDisplay();
+            appState.invoices = generateInvoicesForMonth(appState.currentYear, appState.currentMonth);
+            updateInvoicesDisplay();
+            
+            // Actualizar calendario si está visible
+            if (!document.getElementById('calendar-section').classList.contains('d-none')) {
+                generateCalendar(appState.currentYear, appState.currentMonth);
+            }
+        }
+
+        function updateMonthDisplay() {
+            const monthNames = [
+                'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+                'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+            ];
+            
+            const monthName = monthNames[appState.currentMonth - 1];
+            document.getElementById('current-month').textContent = `${monthName} ${appState.currentYear}`;
+            document.getElementById('current-month-calendar').textContent = `${monthName} ${appState.currentYear}`;
+        }
+
+        // Filtros
+        document.getElementById('search-input').addEventListener('input', function(e) {
+            appState.filters.search = e.target.value.toLowerCase();
+            updateInvoicesDisplay();
+        });
+
+        document.getElementById('client-filter').addEventListener('change', function(e) {
+            appState.filters.client = e.target.value;
+            updateInvoicesDisplay();
+        });
+
+        document.getElementById('service-filter').addEventListener('change', function(e) {
+            appState.filters.service = e.target.value;
+            updateInvoicesDisplay();
+        });
+
+        document.getElementById('status-filter').addEventListener('change', function(e) {
+            appState.filters.status = e.target.value;
+            updateInvoicesDisplay();
+        });
+
+        // Filtros por pestañas
+        document.querySelectorAll('.filter-tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+                appState.filters.tab = this.getAttribute('data-filter');
+                updateInvoicesDisplay();
+            });
+        });
+
+        // Generar lista de facturas
+        function updateInvoicesDisplay() {
+            const filteredInvoices = appState.invoices.filter(invoice => {
+                // Filtro de búsqueda
+                if (appState.filters.search && 
+                    !invoice.client.toLowerCase().includes(appState.filters.search) &&
+                    !invoice.service.toLowerCase().includes(appState.filters.search)) {
+                    return false;
+                }
+                
+                // Filtro por cliente
+                if (appState.filters.client !== 'all' && invoice.client !== appState.filters.client) {
+                    return false;
+                }
+                
+                // Filtro por servicio
+                if (appState.filters.service !== 'all' && invoice.service !== appState.filters.service) {
+                    return false;
+                }
+                
+                // Filtro por estado
+                if (appState.filters.status !== 'all' && invoice.status !== appState.filters.status) {
+                    return false;
+                }
+                
+                // Filtro por pestaña
+                if (appState.filters.tab !== 'all' && invoice.status !== appState.filters.tab) {
+                    return false;
+                }
+                
+                return true;
+            });
+            
+            renderInvoicesList(filteredInvoices);
+            updateStats();
+        }
+
+        function renderInvoicesList(invoices) {
+            const invoicesList = document.getElementById('invoices-list');
+            invoicesList.innerHTML = '';
+            
+            if (invoices.length === 0) {
+                invoicesList.innerHTML = '<div class="text-center p-4 text-muted">No se encontraron facturas</div>';
+                return;
+            }
+            
+            invoices.forEach(invoice => {
+                const dueDateFormatted = formatDate(invoice.dueDate);
+                const statusClass = invoice.status === 'completed' ? 'completed' : 'pending';
+                const statusText = invoice.status === 'completed' ? 'Completada' : 'Pendiente';
+                const statusBadgeClass = invoice.status === 'completed' ? 'status-completed' : 'status-pending';
+                
+                const invoiceElement = document.createElement('div');
+                invoiceElement.className = `invoice-item ${statusClass}`;
+                invoiceElement.innerHTML = `
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input status-checkbox" type="checkbox" 
+                               data-invoice-id="${invoice.id}" 
+                               ${invoice.status === 'completed' ? 'checked' : ''}>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-1">${invoice.client}</h6>
+                            <p class="mb-1 text-muted">${invoice.service}</p>
+                        </div>
+                        <div class="text-end">
+                            <h6 class="mb-1">Q ${invoice.amount.toLocaleString()}</h6>
+                            <span class="status-badge ${statusBadgeClass}">${statusText}</span>
+                            <p class="mb-0 text-muted">Vence: ${dueDateFormatted}</p>
+                        </div>
+                    </div>
+                `;
+                
+                invoicesList.appendChild(invoiceElement);
+            });
+            
+            // Agregar event listeners a los checkboxes
+            document.querySelectorAll('.status-checkbox').forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    const invoiceId = this.getAttribute('data-invoice-id');
+                    const invoice = appState.invoices.find(inv => inv.id === invoiceId);
+                    
+                    if (invoice) {
+                        invoice.status = this.checked ? 'completed' : 'pending';
+                        updateInvoicesDisplay();
+                        
+                        // Actualizar calendario si está visible
+                        if (!document.getElementById('calendar-section').classList.contains('d-none')) {
+                            generateCalendar(appState.currentYear, appState.currentMonth);
+                        }
+                    }
+                });
+            });
+        }
+
+        // Actualizar estadísticas
+        function updateStats() {
+            const totalInvoices = appState.invoices.length;
+            const completedInvoices = appState.invoices.filter(inv => inv.status === 'completed').length;
+            const pendingInvoices = totalInvoices - completedInvoices;
+            const completionRate = totalInvoices > 0 ? Math.round((completedInvoices / totalInvoices) * 100) : 0;
+            
+            const totalAmount = appState.invoices.reduce((sum, inv) => sum + inv.amount, 0);
+            const completedAmount = appState.invoices
+                .filter(inv => inv.status === 'completed')
+                .reduce((sum, inv) => sum + inv.amount, 0);
+            
+            document.getElementById('total-amount').textContent = 
+                `Q.${completedAmount.toLocaleString()} / Q.${totalAmount.toLocaleString()}`;
+                
+            document.getElementById('total-invoices').textContent = totalInvoices;
+            document.getElementById('completed-invoices').textContent = completedInvoices;
+            document.getElementById('pending-invoices').textContent = pendingInvoices;
+            document.getElementById('completion-rate').textContent = `${completionRate}%`;
+            document.getElementById('completed-text').textContent = `${completedInvoices} de ${totalInvoices}`;
+            
+            // Actualizar barra de progreso
+            const progressBar = document.querySelector('#reports-section .progress-bar');
+            if (progressBar) {
+                progressBar.style.width = `${completionRate}%`;
+                progressBar.setAttribute('aria-valuenow', completionRate);
+            }
+        }
+
+        // Generar calendario
+        function generateCalendar(year, month) {
+            const calendar = document.getElementById('calendar');
+            calendar.innerHTML = '';
+            
+            // Crear encabezados de días
+            const daysOfWeek = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+            let headerRow = '<div class="d-flex">';
+            daysOfWeek.forEach(day => {
+                headerRow += `<div class="flex-fill text-center fw-bold p-2">${day}</div>`;
+            });
+            headerRow += '</div>';
+            calendar.innerHTML = headerRow;
+            
+            // Obtener primer día del mes y último día
+            const firstDay = new Date(year, month - 1, 1);
+            const lastDay = new Date(year, month, 0);
+            
+            // Obtener facturas para este mes
+            const invoices = appState.invoices;
+            
+            // Crear calendario
+            let calendarBody = '<div class="d-flex flex-wrap">';
+            
+            // Agregar días vacíos al inicio si es necesario
+            const startDay = firstDay.getDay() === 0 ? 6 : firstDay.getDay() - 1;
+            for (let i = 0; i < startDay; i++) {
+                calendarBody += '<div class="calendar-day flex-fill"></div>';
+            }
+            
+            // Agregar días del mes
+            const today = new Date();
+            for (let day = 1; day <= lastDay.getDate(); day++) {
+                const currentDate = new Date(year, month - 1, day);
+                const isToday = currentDate.toDateString() === today.toDateString();
+                const dayInvoices = invoices.filter(inv => 
+                    inv.dueDate.getDate() === day && inv.dueDate.getMonth() === month - 1
+                );
+                
+                const hasInvoice = dayInvoices.length > 0;
+                
+                let dayClass = 'calendar-day flex-fill';
+                if (isToday) dayClass += ' today';
+                if (hasInvoice) dayClass += ' has-invoice';
+                
+                calendarBody += `<div class="${dayClass}">`;
+                calendarBody += `<div class="fw-bold">${day}</div>`;
+                
+                dayInvoices.forEach(invoice => {
+                    const statusClass = invoice.status === 'completed' ? 'border-success' : 'border-warning';
+                    calendarBody += `
+                        <div class="calendar-invoice ${statusClass}">
+                            ${invoice.client} - ${invoice.service}
+                        </div>
+                    `;
+                });
+                
+                calendarBody += '</div>';
+                
+                // Nueva fila cada 7 días
+                if ((startDay + day) % 7 === 0 && day !== lastDay.getDate()) {
+                    calendarBody += '</div><div class="d-flex flex-wrap">';
+                }
+            }
+            
+            calendarBody += '</div>';
+            calendar.innerHTML += calendarBody;
+        }
+
+        // Generar reportes por cliente
+        function generateClientReports(year, month) {
+            const clientReports = document.getElementById('client-reports');
+            clientReports.innerHTML = '';
+            
+            const invoices = generateInvoicesForMonth(year, month);
+            
+            clients.forEach(client => {
+                const clientInvoices = invoices.filter(inv => inv.client === client.name);
+                const completedInvoices = clientInvoices.filter(inv => inv.status === 'completed');
+                const pendingInvoices = clientInvoices.filter(inv => inv.status === 'pending');
+                const completionRate = clientInvoices.length > 0 ? 
+                    Math.round((completedInvoices.length / clientInvoices.length) * 100) : 0;
+                
+                const clientElement = document.createElement('div');
+                clientElement.className = 'client-progress';
+                clientElement.innerHTML = `
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h6 class="mb-0">${client.name}</h6>
+                        <div>
+                            <span class="badge bg-success">${completedInvoices.length} completadas</span>
+                            <span class="badge bg-warning">${pendingInvoices.length} pendientes</span>
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-between mb-1">
+                        <span>Progreso</span>
+                        <span>${completionRate}%</span>
+                    </div>
+                    <div class="progress progress-bar-custom mb-2">
+                        <div class="progress-bar" role="progressbar" style="width: ${completionRate}%" 
+                             aria-valuenow="${completionRate}" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+                    <div class="text-muted">
+                        ${client.services.map(service => service.name).join(', ')}
+                    </div>
+                    <hr>
+                `;
+                
+                clientReports.appendChild(clientElement);
+            });
+        }
+
+        // Generar reporte
+        document.getElementById('generate-report').addEventListener('click', function() {
+            const month = parseInt(document.getElementById('report-month').value);
+            const year = parseInt(document.getElementById('report-year').value);
+            generateClientReports(year, month);
+            
+            // Actualizar estadísticas del reporte
+            const invoices = generateInvoicesForMonth(year, month);
+            const totalInvoices = invoices.length;
+            const completedInvoices = invoices.filter(inv => inv.status === 'completed').length;
+            const pendingInvoices = totalInvoices - completedInvoices;
+            const completionRate = totalInvoices > 0 ? Math.round((completedInvoices / totalInvoices) * 100) : 0;
+            
+            document.getElementById('total-invoices').textContent = totalInvoices;
+            document.getElementById('completed-invoices').textContent = completedInvoices;
+            document.getElementById('pending-invoices').textContent = pendingInvoices;
+            document.getElementById('completion-rate').textContent = `${completionRate}%`;
+            document.getElementById('completed-text').textContent = `${completedInvoices} de ${totalInvoices}`;
+            
+            // Actualizar barra de progreso
+            const progressBar = document.querySelector('#reports-section .progress-bar');
+            progressBar.style.width = `${completionRate}%`;
+            progressBar.setAttribute('aria-valuenow', completionRate);
+        });
+
+        // Función auxiliar para formatear fechas
+        function formatDate(date) {
+            return date.toLocaleDateString('es-ES', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric'
+            });
+        }
+
+        // Inicializar la aplicación
+        document.addEventListener('DOMContentLoaded', function() {
+            appState.invoices = generateInvoicesForMonth(appState.currentYear, appState.currentMonth);
+            updateMonthDisplay();
+            updateInvoicesDisplay();
+        });
+    </script>
+</body>
+</html>
